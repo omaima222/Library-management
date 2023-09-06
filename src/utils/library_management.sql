@@ -6,7 +6,7 @@ CREATE TABLE `book` (
   `title` varchar(255) NOT NULL,
   `author_name` varchar(255) NOT NULL,
   `quantity` bigint(20) NOT NULL,
-  `ISBN` bigint(20) NOT NULL,
+  `ISBN` bigint(20) NOT NULL UNIQUE,
    PRIMARY KEY (`id`)
 );
 

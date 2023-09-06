@@ -14,6 +14,7 @@ public class User {
 
     // Getters
 
+    public int getId(){ return  this.id; }
     public String getLastName(){
         return  this.lastName;
     }

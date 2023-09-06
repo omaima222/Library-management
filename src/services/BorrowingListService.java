@@ -1,8 +1,6 @@
 package services;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,6 +10,8 @@ import models.Book;
 import utils.MyJDBC;
 import models.BorrowingList;
 import models.User;
+import services.BookService;
+import services.UserService;
 
 public class BorrowingListService {
     public static Connection cnn = MyJDBC.cnn();
@@ -55,36 +55,68 @@ public class BorrowingListService {
         }
     }
 
-    public static void borrow(){
+    public static void borrowBook(){
         System.out.println("*********************** Borrow a book ***********************");
-        System.out.println("Enter the client's cin :");
-        String cin = scanner.next();
-        System.out.println("Enter the book's ISBN number :");
-        Long ISBNnumber = scanner.nextLong();
+        User user = UserService.getUser("cin");
+        if(user==null) return;
+        Book book = BookService.getBook("ISBN");
+        if(book==null) return;
+        int book_id = book.getId();
+        int user_id = user.getId();
         System.out.println("Enter the book's quantity:");
-        String quantity = scanner.next();
+        int quantity = scanner.nextInt();
+        if(quantity>book.getQuantity()){System.out.println("!!! only "+book.getQuantity()+" books available !!!"); return;}
         System.out.println("Enter the return date in yyyy-mm-dd format :");
         String return_date = scanner.next();
         Date Borrowing_date = new Date();
         String borrowing_date = dateFormat.format(Borrowing_date);
 
-        String getBookSql = "select * from book where ISBN = "+ISBNnumber;
-        String getUserSql = "select * from user where cin = "+cin;
-
         try{
-            Statement st = cnn.createStatement();
-            ResultSet book = st.executeQuery(getBookSql);
-            if(book == null) {System.out.println("Book not found"); return;}
-
-            ResultSet user = st.executeQuery(getUserSql);
-            if(user == null) {System.out.println("Client not found"); return;}
-
             String addToBorrowingList = "INSERT INTO borrowing_list (quantity, borrowing_date, return_date, book_id, user_id)"+
-                    "VALUES ("+quantity+","+borrowing_date+","+return_date+","+book.getInt("id")+","+user.getInt(("id"));
+                    "VALUES (?,?,?,?,?)";
 
-            int row = st.executeUpdate(addToBorrowingList);
+            PreparedStatement borrowingListSt = cnn.prepareStatement(addToBorrowingList);
+            borrowingListSt.setInt(1, quantity);
+            borrowingListSt.setString(2, borrowing_date);
+            borrowingListSt.setString(3, return_date);
+            borrowingListSt.setInt(4, book_id);
+            borrowingListSt.setInt(5, user_id);
+
+
+            int row = borrowingListSt.executeUpdate();
             if(row>0) {System.out.println("operation successeded"); return;}
 
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void returnBook(){
+        System.out.println("*********************** Return a book ***********************");
+        User user = UserService.getUser("cin");
+        if(user==null) return;
+        Book book = BookService.getBook("ISBN");
+        if(book==null) return;
+        int book_id = book.getId();
+        int user_id = user.getId();
+        System.out.println("Enter the book's quantity:");
+        int quantity = scanner.nextInt();
+
+        try {
+            Statement borrowedBookSt = cnn.createStatement();
+            ResultSet resultSet = borrowedBookSt.executeQuery("select * from borrowing_list where book_id = "+book.getId());
+            if(!resultSet.next()){System.out.println("!!! This book is not in the borrowing list !!!");return;}
+            if(resultSet.getInt("quantity") == quantity){
+                int row = borrowedBookSt.executeUpdate("DELETE from borrowing_list where book_id = "+book.getId());
+            }else if(resultSet.getInt("quantity") > quantity){
+                int newQuantity = resultSet.getInt("quantity") - quantity;
+                int row = borrowedBookSt.executeUpdate("UPDATE borrowing_list set quantity = "+ newQuantity +" where book_id = "+book.getId());
+            }
+            PreparedStatement bookSt = cnn.prepareStatement("update book set quantity = ? where id = ?");
+            bookSt.setInt(1,book.getQuantity()+quantity);
+            bookSt.setInt(2, book.getId());
+            int row = bookSt.executeUpdate();
+            if(row>0) {System.out.println("operation successeded"); return;}
         }catch (Exception e){
             e.printStackTrace();
         }
