@@ -59,7 +59,8 @@ public class BorrowingListService {
         System.out.println("*********************** Borrow a book ***********************");
         User user = UserService.getUser("cin");
         if(user==null) return;
-        Book book = BookService.getBook("ISBN");
+        ArrayList<Book> books =  BookService.getBook("ISBN");
+        Book book = books.get(0);
         if(book==null) return;
         int book_id = book.getId();
         int user_id = user.getId();
@@ -72,20 +73,27 @@ public class BorrowingListService {
         String borrowing_date = dateFormat.format(Borrowing_date);
 
         try{
-            String addToBorrowingList = "INSERT INTO borrowing_list (quantity, borrowing_date, return_date, book_id, user_id)"+
-                    "VALUES (?,?,?,?,?)";
+            Statement st = cnn.createStatement();
+            ResultSet resultSet = st.executeQuery("SELECT * from borrowing_list where book_id ="+book_id+" and user_id ="+user_id);
+            if(resultSet.next()){System.out.println("This user has already borrowed "+resultSet.getInt("quantity")+" of this book"); return;}
+            else {
+                String addToBorrowingList = "INSERT INTO borrowing_list (quantity, borrowing_date, return_date, book_id, user_id)" +
+                        "VALUES (?,?,?,?,?)";
 
-            PreparedStatement borrowingListSt = cnn.prepareStatement(addToBorrowingList);
-            borrowingListSt.setInt(1, quantity);
-            borrowingListSt.setString(2, borrowing_date);
-            borrowingListSt.setString(3, return_date);
-            borrowingListSt.setInt(4, book_id);
-            borrowingListSt.setInt(5, user_id);
+                PreparedStatement borrowingListSt = cnn.prepareStatement(addToBorrowingList);
+                borrowingListSt.setInt(1, quantity);
+                borrowingListSt.setString(2, borrowing_date);
+                borrowingListSt.setString(3, return_date);
+                borrowingListSt.setInt(4, book_id);
+                borrowingListSt.setInt(5, user_id);
 
 
-            int row = borrowingListSt.executeUpdate();
-            if(row>0) {System.out.println("operation successeded"); return;}
-
+                int row = borrowingListSt.executeUpdate();
+                if (row > 0) {
+                    System.out.println("operation successeded");
+                    return;
+                }
+            }
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -95,7 +103,8 @@ public class BorrowingListService {
         System.out.println("*********************** Return a book ***********************");
         User user = UserService.getUser("cin");
         if(user==null) return;
-        Book book = BookService.getBook("ISBN");
+        ArrayList<Book> books =  BookService.getBook("ISBN");
+        Book book = books.get(0);
         if(book==null) return;
         int book_id = book.getId();
         int user_id = user.getId();
@@ -104,13 +113,13 @@ public class BorrowingListService {
 
         try {
             Statement borrowedBookSt = cnn.createStatement();
-            ResultSet resultSet = borrowedBookSt.executeQuery("select * from borrowing_list where book_id = "+book.getId());
+            ResultSet resultSet = borrowedBookSt.executeQuery("select * from borrowing_list where book_id = "+book.getId()+"ORDER BY borrowing_date DESC LIMIT 1");
             if(!resultSet.next()){System.out.println("!!! This book is not in the borrowing list !!!");return;}
             if(resultSet.getInt("quantity") == quantity){
-                int row = borrowedBookSt.executeUpdate("DELETE from borrowing_list where book_id = "+book.getId());
+                int row = borrowedBookSt.executeUpdate("DELETE from borrowing_list where id ="+resultSet.getInt("id"));
             }else if(resultSet.getInt("quantity") > quantity){
                 int newQuantity = resultSet.getInt("quantity") - quantity;
-                int row = borrowedBookSt.executeUpdate("UPDATE borrowing_list set quantity = "+ newQuantity +" where book_id = "+book.getId());
+                int row = borrowedBookSt.executeUpdate("UPDATE borrowing_list set quantity = "+ newQuantity +" where id ="+resultSet.getInt("id"));
             }
             PreparedStatement bookSt = cnn.prepareStatement("update book set quantity = ? where id = ?");
             bookSt.setInt(1,book.getQuantity()+quantity);

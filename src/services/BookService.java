@@ -14,7 +14,7 @@ public class BookService {
     public static Scanner scanner = new Scanner(System.in);
     public static Connection cnn = MyJDBC.cnn();
 
-    public static Book getBook(String searchBy){
+    public static ArrayList<Book> getBook(String searchBy){
 
         System.out.println("Enter the book's "+searchBy+" :");
         String searchValue = scanner.nextLine();
@@ -27,13 +27,18 @@ public class BookService {
                 bookSt.setLong(1, ISBNnumber);
             }else bookSt.setString(1, searchValue);
             ResultSet resultSet = bookSt.executeQuery();
-            if(!resultSet.next()) {System.out.println("!!! Book not found !!!"); return null;}
-            Book book = new Book(resultSet.getInt("id"));
-            book.setTitle(resultSet.getString("title"));
-            book.setAuthorName(resultSet.getString("author_name"));
-            book.setISBNNumber(resultSet.getLong("ISBN"));
-            book.setQuantity(resultSet.getInt("quantity"));
-            return book;
+            ArrayList<Book> books = new ArrayList<>();
+            while (resultSet.next()){
+                Book book = new Book(resultSet.getInt("id"));
+                book.setTitle(resultSet.getString("title"));
+                book.setAuthorName(resultSet.getString("author_name"));
+                book.setISBNNumber(resultSet.getLong("ISBN"));
+                book.setQuantity(resultSet.getInt("quantity"));
+                books.add(book);
+            }
+            if(books.isEmpty()) {System.out.println("!!! Book not found !!!"); return null;}
+
+            return books;
         }catch (Exception e){
             e.printStackTrace();
             return null;
@@ -95,37 +100,34 @@ public class BookService {
     }
     public static void deleteBook(){
         System.out.println("*********************** Delete a book ***********************");
-        System.out.println("Enter the book's ISBN number :");
-        long ISBNnumber = scanner.nextLong();
-        String sql = "Delete FROM book where ISBN="+ISBNnumber;
+        ArrayList<Book> books = getBook("ISBN");
+        Book book = books.get(0);
+        String deleteSql = "DELETE FROM book where id="+book.getId();
         try{
             Statement st = cnn.createStatement();
-            int m = st.executeUpdate(sql);
-            if(m>0) System.out.println("The book is successfully deleted !");
+            ResultSet resultSet = st.executeQuery("select * from borrowing_list where book_id="+book.getId());
+            if(resultSet.next()){
+                int borrowedQuantity = resultSet.getInt("quantity");
+                if(borrowedQuantity>0) {
+                    int row = st.executeUpdate("UPDATE book set quantity=0 where id=" + book.getId());
+                    if (row > 0)
+                        System.out.println("All available copies are deleted ! " + borrowedQuantity + " more copies are borrowed !");
+                }
+            }else{
+                int row = st.executeUpdate(deleteSql);
+                if(row>0) System.out.println("The book is successfully deleted !");
+            }
         }catch (Exception e){
             e.printStackTrace();
         }
     }
     public static void  editBook(){
         System.out.println("*********************** Edit a book ***********************");
-        System.out.println("Enter the book's ISBN number :");
-        long ISBNnumber = scanner.nextLong();
-        String findSql = "select * from book where ISBN ="+ISBNnumber;
-        try{
-            Statement st = cnn.createStatement();
-            ResultSet resultSet = st.executeQuery(findSql);
-            if(!resultSet.next()){ System.out.println("!!! Book not found !!!"); return;}
-            Book book = new Book(resultSet.getInt("id"));
-            book.setAuthorName(resultSet.getString("author_name"));
-            book.setTitle(resultSet.getString("title"));
-            book.setQuantity(resultSet.getInt("quantity"));
-            book.setISBNNumber(resultSet.getLong("ISBN"));
-            System.out.println(book);
-            scanner.nextLine();
-            updateBook(book.id);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        ArrayList<Book> books = getBook("ISBN");
+        Book book = books.get(0);
+        System.out.println(book);
+        int book_id = book.getId();
+        updateBook(book.id);
     }
     public static void updateBook(int id){
         System.out.println("Enter new title :");
