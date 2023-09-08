@@ -8,7 +8,10 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 import models.Book;
+import models.BorrowingList;
+import repositories.BorrowingListDao;
 import utils.MyJDBC;
+import repositories.BookDao;
 
 public class BookService {
     public static Scanner scanner = new Scanner(System.in);
@@ -44,78 +47,43 @@ public class BookService {
             return null;
         }
     }
-    public static void getAvailableBooks(){
-        Connection cnn = MyJDBC.cnn();
-        ArrayList<Book> result = new ArrayList();
-        try{
-            Statement st = cnn.createStatement();
-            ResultSet resultSet = st.executeQuery("select * from book where quantity>0");
-            while (resultSet.next()){
-                Book book = new Book(resultSet.getInt("id"));
-                book.setTitle(resultSet.getString("title"));
-                book.setAuthorName(resultSet.getString("author_name"));
-                book.setQuantity(resultSet.getInt("quantity"));
-                book.setISBNNumber(resultSet.getLong("ISBN"));
-                result.add(book);
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        System.out.println("_____________________________________________");
-        System.out.println("                Available books              ");
-        for( Book book : result){
-            System.out.println("_____________________________________________");
-            System.out.println(book);
-            System.out.println("_____________________________________________");
-        }
-    }
-    public static void addBook(){
-        System.out.println("*********************** Add a book ***********************");
+
+    public static ArrayList<Book> getAllAvailableBooks(){
+        ArrayList<Book> books = BookDao.getBooks("quantity > 0");
+        return books;
+    };
+    public static boolean addBook(){
         System.out.println("Enter Title : ");
         String title = scanner.nextLine();
         System.out.println("Enter Author : ");
         String author_name = scanner.nextLine();
         System.out.println("Enter ISBN : ");
-        int ISBN =  scanner.nextInt();
+        Long ISBN =  scanner.nextLong();
         System.out.println("Enter quantity : ");
         int quantity =  scanner.nextInt();
-        String sql = "INSERT INTO book (title, author_name, quantity, ISBN) " +
-                "VALUES (?,?,?,?)";
-
-        try{
-            PreparedStatement st = cnn.prepareStatement(sql);
-            st.setString(1, title);
-            st.setString(2, author_name);
-            st.setInt(3, quantity);
-            st.setLong(4, ISBN);
-
-            int row = st.executeUpdate();
-            if(row == 1)
-                System.out.println("Book inserted successfully");
-            else System.out.println("Insertion failed");
-
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        return BookDao.addBook(title,author_name,quantity,ISBN);
     }
     public static void deleteBook(){
-        System.out.println("*********************** Delete a book ***********************");
-        ArrayList<Book> books = getBook("ISBN");
-        Book book = books.get(0);
-        String deleteSql = "DELETE FROM book where id="+book.getId();
+        System.out.println("Enter the book's ISBN :");
+        Long ISBN = scanner.nextLong();
+        // finding the book
+        Book book = BookDao.getBook("ISBN = "+ISBN);
         try{
+            //check if the book is borrowed
+            BorrowingList is_borrowed = BorrowingListDao.getBorrowedBook("book_id = "+book.getId());
             Statement st = cnn.createStatement();
-            ResultSet resultSet = st.executeQuery("select * from borrowing_list where book_id="+book.getId());
-            if(resultSet.next()){
-                int borrowedQuantity = resultSet.getInt("quantity");
-                if(borrowedQuantity>0) {
-                    int row = st.executeUpdate("UPDATE book set quantity=0 where id=" + book.getId());
-                    if (row > 0)
-                        System.out.println("All available copies are deleted ! " + borrowedQuantity + " more copies are borrowed !");
+            //if it is then set the book's quantity to 0
+            if(is_borrowed!=null){
+                int borrowedQuantity = is_borrowed.getQuantity();
+                int row = st.executeUpdate("UPDATE book set quantity=0 where id=" + book.getId());
+                if (row > 0){
+                    System.out.println("All available copies are deleted ! " + borrowedQuantity + " more copies are borrowed !");
                 }
-            }else{
-                int row = st.executeUpdate(deleteSql);
-                if(row>0) System.out.println("The book is successfully deleted !");
+            }
+            //if it isn't delete the book
+            else{
+                boolean row = BookDao.deleteBook(book.getId());
+                if(row) System.out.println("The book is successfully deleted !");
             }
         }catch (Exception e){
             e.printStackTrace();

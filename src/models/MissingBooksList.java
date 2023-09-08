@@ -7,6 +7,7 @@ public class MissingBooksList {
     private int quantity;
     private Book book;
 
+    private User user;
     public MissingBooksList(int id){
         this.id = id;
     }
@@ -21,6 +22,10 @@ public class MissingBooksList {
         return  this.book;
     }
 
+    public User getUser(){
+        return  this.user;
+    }
+
 
     // Setters
 
@@ -30,5 +35,9 @@ public class MissingBooksList {
 
     public void setBook(Book book){
         this.book = book;
+    }
+
+    public void setUser(User user){
+        this.user = user;
     }
 }

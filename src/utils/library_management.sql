@@ -41,10 +41,13 @@ CREATE TABLE `borrowing_list` (
 CREATE TABLE `missing_books_list` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `book_id` bigint(20) NOT NULL,
+    `user_id` bigint(20) NOT NULL,
     `quantity` bigint(20) NOT NULL,
     PRIMARY KEY (`id`),
     KEY `book_id` (`book_id`),
-    FOREIGN KEY (`book_id`) REFERENCES `book` (`id`)
+    FOREIGN KEY (`book_id`) REFERENCES `book` (`id`),
+    KEY `user_id` (`user_id`),
+    FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 );
 
 
