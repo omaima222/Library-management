@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.Scanner;
 
 import models.Book;
+import repositories.BookDao;
 import utils.MyJDBC;
 import models.BorrowingList;
 import models.User;
@@ -59,8 +60,7 @@ public class BorrowingListService {
         System.out.println("*********************** Borrow a book ***********************");
         User user = UserService.getUser("cin");
         if(user==null) return;
-        ArrayList<Book> books =  BookService.getBook("ISBN");
-        Book book = books.get(0);
+        Book book = BookDao.getBook("ISBN");
         if(book==null) return;
         int book_id = book.getId();
         int user_id = user.getId();
@@ -113,8 +113,7 @@ public class BorrowingListService {
         System.out.println("*********************** Return a book ***********************");
         User user = UserService.getUser("cin");
         if(user==null) return;
-        ArrayList<Book> books =  BookService.getBook("ISBN");
-        Book book = books.get(0);
+        Book book = BookDao.getBook("ISBN");
         if(book==null) return;
         int book_id = book.getId();
         int user_id = user.getId();

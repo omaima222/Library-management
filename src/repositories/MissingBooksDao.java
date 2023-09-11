@@ -105,4 +105,20 @@ public class MissingBooksDao {
         }
     }
 
+    public static int countMissingBooks(){
+        try{
+            Statement st = cnn.createStatement();
+            ResultSet resultSet = st.executeQuery("select * from missing_books_list");
+            int count = 0;
+            while(resultSet.next()){
+                count+=resultSet.getInt("quantity");
+            }
+            return  count;
+        }catch (Exception e){
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+
 }

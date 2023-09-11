@@ -28,4 +28,19 @@ public class UserDao {
         }
     }
 
+    public static int countUsers(){
+        try{
+            Statement st = cnn.createStatement();
+            ResultSet resultSet = st.executeQuery("select * from user");
+            int count = 0;
+            while(resultSet.next()){
+                count++;
+            }
+            return  count;
+        }catch (Exception e){
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
 }

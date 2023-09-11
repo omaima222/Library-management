@@ -38,15 +38,14 @@ public class BookDao {
         try{
             Statement bookSt = cnn.createStatement();
             ResultSet resultSet = bookSt.executeQuery(getBookSql);
-            if(resultSet==null) return null;
-            else {
+            if(resultSet.next()) {
                 Book book = new Book(resultSet.getInt("id"));
                 book.setTitle(resultSet.getString("title"));
                 book.setAuthorName(resultSet.getString("author_name"));
                 book.setISBNNumber(resultSet.getLong("ISBN"));
                 book.setQuantity(resultSet.getInt("quantity"));
                 return book;
-            }
+            }else return null;
         }catch (Exception e){
             e.printStackTrace();
             return null;
@@ -75,7 +74,7 @@ public class BookDao {
     }
 
     public static boolean deleteBook(int id){
-        String deleteSql = "DELETE FROM book where id="+id;
+        String deleteSql = "DELETE FROM book where id=?";
         try{
             PreparedStatement st = cnn.prepareStatement(deleteSql);
             st.setInt(1, id);
@@ -108,5 +107,20 @@ public class BookDao {
         }
     }
 
+
+    public static int countAvailableBooks(){
+        try{
+            Statement st = cnn.createStatement();
+            ResultSet resultSet = st.executeQuery("select * from book where quantity>0");
+            int count = 0;
+            while(resultSet.next()){
+                count+=resultSet.getInt("quantity");
+            }
+            return  count;
+        }catch (Exception e){
+            e.printStackTrace();
+            return 0;
+        }
+    }
 
 }

@@ -60,26 +60,26 @@ public class BorrowingListDao {
                     "INNER JOIN user on borrowing_list.user_id = user.id " +
                     "INNER JOIN book on borrowing_list.book_id = book.id"+
                     " WHERE "+condition+" LIMIT 1");
-            if(resultSet==null) return null;
+            if(resultSet.next()){
+                BorrowingList borrowedBook = new BorrowingList(resultSet.getInt("id"));
+                borrowedBook.setBorrowingDate(resultSet.getDate("borrowing_date"));
+                borrowedBook.setReturnDate(resultSet.getDate("return_date"));
+                borrowedBook.setQuantity(resultSet.getInt("quantity"));
 
-            BorrowingList borrowedBook = new BorrowingList(resultSet.getInt("id"));
-            borrowedBook.setBorrowingDate(resultSet.getDate("borrowing_date"));
-            borrowedBook.setReturnDate(resultSet.getDate("return_date"));
-            borrowedBook.setQuantity(resultSet.getInt("quantity"));
+                User user = new User(resultSet.getInt("user.id"));
+                user.setFirstName(resultSet.getString("user.first_name"));
+                user.setLastName(resultSet.getString("user.last_name"));
+                user.setCin(resultSet.getString("user.cin"));
+                borrowedBook.setUser(user);
 
-            User user = new User(resultSet.getInt("user.id"));
-            user.setFirstName(resultSet.getString("user.first_name"));
-            user.setLastName(resultSet.getString("user.last_name"));
-            user.setCin(resultSet.getString("user.cin"));
-            borrowedBook.setUser(user);
+                Book book = new Book(resultSet.getInt("id"));
+                book.setTitle(resultSet.getString("title"));
+                book.setAuthorName(resultSet.getString("author_name"));
+                book.setISBNNumber(resultSet.getLong("ISBN"));
+                borrowedBook.setBook(book);
 
-            Book book = new Book(resultSet.getInt("id"));
-            book.setTitle(resultSet.getString("title"));
-            book.setAuthorName(resultSet.getString("author_name"));
-            book.setISBNNumber(resultSet.getLong("ISBN"));
-            borrowedBook.setBook(book);
-
-            return borrowedBook;
+                return borrowedBook;
+            }else return null;
         }catch (Exception e){
             e.printStackTrace();
             return null;
@@ -140,6 +140,21 @@ public class BorrowingListDao {
         }catch (Exception e){
            e.printStackTrace();
            return false;
+        }
+    }
+
+    public static int countBorrowedBooks(){
+        try{
+            Statement st = cnn.createStatement();
+            ResultSet resultSet = st.executeQuery("select * from borrowing_list");
+            int count = 0;
+            while(resultSet.next()){
+                count+=resultSet.getInt("quantity");
+            }
+            return  count;
+        }catch (Exception e){
+            e.printStackTrace();
+            return 0;
         }
     }
 
