@@ -12,124 +12,89 @@ import models.BorrowingList;
 import repositories.BorrowingListDao;
 import utils.MyJDBC;
 import repositories.BookDao;
+import utils.Validation;
 
 public class BookService {
+
     public static Scanner scanner = new Scanner(System.in);
-    public static Connection cnn = MyJDBC.cnn();
-
-
     public static ArrayList<Book> getAllAvailableBooks(){
         ArrayList<Book> books = BookDao.getBooks("quantity > 0");
         return books;
     };
-    public static boolean addBook(String title,String author_name,int quantity,Long ISBN){
+    public static ArrayList<Book> searchByTitle(){
+        // Title input
+        String title = Validation.validateStr("Title")+"%";
+        // Find books
+        ArrayList<Book> books = BookDao.getBooks("title LIKE '"+title+"'");
+        return books;
+    }
+    public static ArrayList<Book> searchByAuthor(){
+        // Author input
+        String author_name = Validation.validateStr("Author")+"%";
+        // Find books
+        ArrayList<Book> books = BookDao.getBooks("author_name LIKE '"+author_name+"'");
+        return books;
+    }
+    public static boolean addBook(){
         while (true){
+            // Title input
+            String title = Validation.validateStr("Title");
 
-            // Check if if title is null
-            if (title == null || title.isEmpty()) {
-                System.out.println("Title is required. Please enter a title:");
-                title = scanner.nextLine();
-                continue;
-            }
+            // Author name input
+            String author_name = Validation.validateStr("Author");
 
-            // Check if if author name is null
-            if (author_name == null || author_name.isEmpty()) {
-                System.out.println("Author is required. Please enter the author' name:");
-                author_name = scanner.nextLine();
-                continue;
-            }
+            // Quantity input
+            int quantity = Validation.validateQuantity();
 
-            // Check if quantity is positive
-            if ( quantity <= 0) {
-                System.out.println("Quantity must be a positive number. Please enter a valid quantity:");
-                try {
-                    quantity = Integer.parseInt(scanner.nextLine());
-                } catch (NumberFormatException e) {
-                    continue;
-                }
-            }
-
-            // Check if ISBN is valid
-            if (ISBN == null || ISBN <= 0 ) {
-                System.out.println("ISBN must be a positive number. Please enter a valid ISBN:");
-                try {
-                    ISBN = Long.parseLong(scanner.nextLine());
-                } catch (NumberFormatException e) {
-                    continue;
-                }
-            }
+            // ISBN input
+            Long ISBN = Validation.validateISBN();
 
             return BookDao.addBook(title,author_name,quantity,ISBN);
         }
     }
-    public static boolean deleteBook(Long ISBN){
-        while (true){
-            // Check if ISBN is valid
-            if (ISBN == null || ISBN <= 0 ) {
-                System.out.println("ISBN must be a positive number. Please enter a valid ISBN:");
-                try {
-                    ISBN = Long.parseLong(scanner.nextLine());
-                } catch (NumberFormatException e) {
-                    continue;
-                }
-            }
-
-
-            // finding the book
-            Book book = BookDao.getBook("ISBN = "+ISBN);
-            if(book == null) return false;
-            //check if the book is borrowed
-            BorrowingList is_borrowed = BorrowingListDao.getBorrowedBook("book_id = "+book.getId());
-            //if it is then set the book's quantity to 0
-            if(is_borrowed!=null){
-                int borrowedQuantity = is_borrowed.getQuantity();
-                if ( BookDao.updateBook(book.getId(),book.getTitle(),book.getAuthorName(),0,book.getISBNNumber())){
-                    System.out.println("All available copies are deleted ! " + borrowedQuantity + " more copies are borrowed !");
-                    return true;
-                }else return false;
-            }
-            //if it isn't delete the book
-            else{
-                boolean row = BookDao.deleteBook(book.getId());
-                if(row) {
-                    System.out.println("The book is successfully deleted !");
-                    return true;
-                }else return false;
-            }
+    public static boolean deleteBook(){
+        // ISBN input
+        Long ISBN = Validation.validateISBN();
+        // finding the book
+        Book book = BookDao.getBook("ISBN = "+ISBN);
+        if(book == null) return false;
+        //check if the book is borrowed
+        BorrowingList is_borrowed = BorrowingListDao.getBorrowedBook("book_id = "+book.getId());
+        //if it is then set the book's quantity to 0
+        if(is_borrowed!=null){
+            int borrowedQuantity = is_borrowed.getQuantity();
+            if ( BookDao.updateBook(book.getId(),book.getTitle(),book.getAuthorName(),0,book.getISBNNumber())){
+                System.out.println("All available copies are deleted ! " + borrowedQuantity + " more copies are borrowed !");
+                return true;
+            }else return false;
+        }
+        //if it isn't delete the book
+        else{
+            boolean row = BookDao.deleteBook(book.getId());
+            if(row) {
+                return true;
+            }else return false;
         }
     }
-    public static void  editBook(Long ISBN){
-        System.out.println("*********************** Edit a book ***********************");
+    public static boolean  editBook(){
+        // ISBN input
+        Long ISBN = Validation.validateISBN();
+        // Find the book
         Book book = BookDao.getBook("ISBN="+ISBN);
-        System.out.println(book);
-        int book_id = book.getId();
-        updateBook(book.id);
-    }
-    public static void updateBook(int id){
-        System.out.println("Enter new title :");
-        String title = scanner.nextLine();
-        System.out.println("Enter new author :");
-        String author = scanner.nextLine();
-        System.out.println("Enter new ISBN :");
-        long ISBNnumber = scanner.nextInt();
-        System.out.println("Enter new quantity :");
-        int quantity = scanner.nextInt();
-
-        String sql = "UPDATE book SET title=?,author_name=?,quantity=?,ISBN=? where id = ? ";
-        try{
-            PreparedStatement st = cnn.prepareStatement(sql);
-            st.setString(1, title);
-            st.setString(2, author);
-            st.setInt(3, quantity);
-            st.setLong(4, ISBNnumber);
-            st.setLong(5, id);
-
-            int row = st.executeUpdate();
-            if(row>0) System.out.println("Book successfully updated");
-
-        }catch (Exception e){
-            e.printStackTrace();
+        if(book == null) {
+            System.out.println("| !!! Book not found !!!                                                 |");
+            return false;
         }
-
+        System.out.println(book);
+        // Title input
+        String title = Validation.validateStr("Title");
+        // Author input
+        String author_name = Validation.validateStr("Author");
+        // Quantity input
+        int quantity = Validation.validateQuantity();
+        // ISBN input
+        Long newISBN = Validation.validateISBN();
+        // updating the book
+        return BookDao.updateBook(book.getId(),title,author_name,quantity,newISBN);
     }
 }

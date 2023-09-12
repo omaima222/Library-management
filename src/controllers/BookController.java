@@ -5,37 +5,76 @@ import repositories.BorrowingListDao;
 import repositories.MissingBooksDao;
 import repositories.UserDao;
 import services.BookService;
+import models.Book;
 
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class BookController {
 
     public static Scanner scanner = new Scanner(System.in);
+
+    public static void getAvailableBooks(){
+        System.out.println("|_____________________________ AVAILABLE BOOKS _____________________________|");
+        ArrayList<Book> books = BookService.getAllAvailableBooks();
+        if(books == null || books.isEmpty()){
+            System.out.println("|_____________________________ NO BOOKS FOUND ______________________________|");
+            return;
+        }
+        for (Book book : books) {
+            System.out.println(book);
+            System.out.println("|___________________________________________________________________________|");
+        }
+    }
+
+    public static void searchByTitle(){
+        System.out.println("|_____________________________ SEARCH BY TITLE _____________________________|");
+        ArrayList<Book> books = BookService.searchByTitle();
+        if(books == null || books.isEmpty()){
+            System.out.println("|_____________________________ NO BOOKS FOUND ______________________________|");
+            return;
+        }
+        for(Book book : books){
+            System.out.println(book);
+            System.out.println("|___________________________________________________________________________|");
+        }
+    }
+
+    public static void searchByAuthor(){
+        System.out.println("|_____________________________ SEARCH BY Author _____________________________|");
+        ArrayList<Book> books = BookService.searchByAuthor();
+        if(books == null || books.isEmpty()){
+            System.out.println("|_____________________________ NO BOOKS FOUND ______________________________|");
+            return;
+        }
+        for(Book book : books){
+            System.out.println(book);
+            System.out.println("|___________________________________________________________________________|");
+        }
+    }
+
     public static void addBook(){
         System.out.println("|________________________________ ADD A BOOK ________________________________|");
-        System.out.println("| Enter Title :                                                              |");
-        String title = scanner.nextLine();
-        System.out.println("| Enter Author :                                                             |");
-        String author_name = scanner.nextLine();
-        System.out.println("| Enter ISBN :                                                               |");
-        Long ISBN =  scanner.nextLong();
-        System.out.println("| Enter quantity :                                                           |");
-        int quantity =  scanner.nextInt();
-        if(BookService.addBook(title,author_name,quantity,ISBN)) {
+        if(BookService.addBook()) {
               System.out.println("|_________________________ SUCCESSFULLY ADDDED BOOK _________________________|");
         }else System.out.println("|________________________ !!!! OPERATION FAILED !!!! ________________________|");
     }
 
     public static void deleteBook(){
         System.out.println("|________________________________ DELETE A BOOK ________________________________|");
-        System.out.println("| Enter ISBN :                                                                  |");
-        Long ISBN =  scanner.nextLong();
-        if(BookService.deleteBook(ISBN)) {
+        if(BookService.deleteBook()) {
               System.out.println("|___________________________ SUCCESSFULLY DELETED ____________________________|");
         }else System.out.println("|________________________ !!!! OPERATION FAILED !!!! _________________________|");
     }
 
-    public static void BookStatics(){
+    public static void updateBook(){
+        System.out.println("|_______________________________ UPDATE A BOOK _______________________________|");
+        if(BookService.editBook()) {
+            System.out.println("|___________________________ SUCCESSFULLY UPDATED ____________________________|");
+        }else System.out.println("|________________________ !!!! OPERATION FAILED !!!! _________________________|");
+    }
+
+    public static void bookStatics(){
         int users = UserDao.countUsers();
         int availableBooks = BookDao.countAvailableBooks();
         int borrowedBooks = BorrowingListDao.countBorrowedBooks();
@@ -53,5 +92,6 @@ public class BookController {
         System.out.println("| USERS            :                                                "+users);
         System.out.println("|_________________________________________________________________________");
     }
+
 
 }

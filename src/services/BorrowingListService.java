@@ -8,6 +8,7 @@ import java.util.Scanner;
 
 import models.Book;
 import repositories.BookDao;
+import repositories.BorrowingListDao;
 import utils.MyJDBC;
 import models.BorrowingList;
 import models.User;
@@ -17,43 +18,10 @@ import services.UserService;
 public class BorrowingListService {
     public static Connection cnn = MyJDBC.cnn();
     public static Scanner scanner = new Scanner(System.in);
-
     public static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-    public static void  getBorrowedBooksList(){
-
-        System.out.println("________________________________________________________________________________________________________________________________");
-        System.out.println("CIN                User                Book title                Book ISBN                Borrowing date                Return date                ");
-        System.out.println("________________________________________________________________________________________________________________________________");
-
-        try{
-            Statement st = cnn.createStatement();
-            ResultSet resultSet = st.executeQuery("SELECT * from borrowing_list " +
-                    "INNER JOIN user on borrowing_list.user_id = user.id " +
-                    "INNER JOIN book on borrowing_list.book_id = book.id");
-            while (resultSet.next()){
-                BorrowingList borrowed = new BorrowingList(resultSet.getInt("id"));
-                borrowed.setBorrowingDate(resultSet.getDate("borrowing_date"));
-                borrowed.setReturnDate(resultSet.getDate("return_date"));
-                borrowed.setQuantity(resultSet.getInt("quantity"));
-
-                User user = new User(resultSet.getInt("user.id"));
-                user.setFirstName(resultSet.getString("user.first_name"));
-                user.setLastName(resultSet.getString("user.last_name"));
-                user.setCin(resultSet.getString("user.cin"));
-                borrowed.setUser(user);
-
-                Book book = new Book(resultSet.getInt("id"));
-                book.setTitle(resultSet.getString("title"));
-                book.setAuthorName(resultSet.getString("author_name"));
-                book.setISBNNumber(resultSet.getLong("ISBN"));
-                borrowed.setBook(book);
-
-                System.out.println(borrowed);
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+    public static ArrayList<BorrowingList>  getBorrowedBooksList() {
+        return BorrowingListDao.getBorrowedBooks("1");
     }
 
     public static void borrowBook(){

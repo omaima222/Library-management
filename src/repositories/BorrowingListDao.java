@@ -86,7 +86,6 @@ public class BorrowingListDao {
         }
     }
 
-
     public static boolean addToBorrowedBooks(int book_id, int user_id, String borrowing_date, String return_date, int quantity){
         String addToBorrowingList = "INSERT INTO borrowing_list (quantity, borrowing_date, return_date, book_id, user_id)" +
                 "VALUES (?,?,?,?,?)";

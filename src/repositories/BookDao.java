@@ -107,7 +107,6 @@ public class BookDao {
         }
     }
 
-
     public static int countAvailableBooks(){
         try{
             Statement st = cnn.createStatement();
