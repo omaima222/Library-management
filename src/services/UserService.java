@@ -1,38 +1,41 @@
 package services;
 
+import models.Book;
 import models.User;
+import repositories.BookDao;
+import repositories.UserDao;
 import utils.MyJDBC;
+import utils.Validation;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class UserService {
-    public static Connection cnn = MyJDBC.cnn();
-    public static Scanner scanner = new Scanner(System.in);
-    public static User getUser(String searchBy){
-        System.out.println("Enter the client's "+searchBy+" :");
-        String searchValue = scanner.nextLine();
 
-        String getUserSql = "select * from user where "+searchBy+" = ?";
+     public static ArrayList<User> getAllUsers(){
+         return UserDao.getUsers("1");
+     }
 
-        try{
-            PreparedStatement userSt = cnn.prepareStatement(getUserSql);
-            userSt.setString(1, searchValue);
-            ResultSet resultSet = userSt.executeQuery();
-            if(!resultSet.next()) {System.out.println("!!! Client not found !!!"); return null;}
-            User user = new User(resultSet.getInt("id"));
-            user.setFirstName(resultSet.getString("first_name"));
-            user.setLastName(resultSet.getString("last_name"));
-            user.setCin(resultSet.getString("cin"));
+     public static boolean addUser(){
+         // input cin
+         String cin = Validation.validateStr("cin");
+         // check if its unique
+         User user =  UserDao.getUser("cin='"+cin+"'");
+         if(user!=null){
+             System.out.println("!!! The user "+user.getFirstName()+" "+user.getLastName()+" already has this cin !!!");
+             return false;
+         }
 
-            return user;
+         // input first name
+         String firstName = Validation.validateStr("first name");
 
-        }catch (Exception e){
-            e.printStackTrace();
-            return null;
-        }
-    }
+         // input last name
+         String lastName = Validation.validateStr("last name");
+
+         return UserDao.addUser(cin,firstName,lastName);
+     }
 
 }

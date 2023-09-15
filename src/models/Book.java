@@ -54,7 +54,7 @@ public class Book {
 
     @Override
     public String toString(){
-        return "* Id        : "+ id+"\n"+"* Title     : "+title+"\n"+"* Author    : "+authorName+"\n"+"* ISBN      : "+ISBNNumber+"\n"+"* Quantity  : "+quantity;
+        return "| Id        : "+ id+"\n"+"| Title     : "+title+"\n"+"| Author    : "+authorName+"\n"+"| ISBN      : "+ISBNNumber+"\n"+"| Quantity  : "+quantity;
     }
 
 

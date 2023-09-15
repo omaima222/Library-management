@@ -2,6 +2,7 @@ package services;
 
 import java.sql.*;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
@@ -9,11 +10,13 @@ import java.util.Scanner;
 import models.Book;
 import repositories.BookDao;
 import repositories.BorrowingListDao;
+import repositories.UserDao;
 import utils.MyJDBC;
 import models.BorrowingList;
 import models.User;
 import services.BookService;
 import services.UserService;
+import utils.Validation;
 
 public class BorrowingListService {
     public static Connection cnn = MyJDBC.cnn();
@@ -24,87 +27,137 @@ public class BorrowingListService {
         return BorrowingListDao.getBorrowedBooks("1");
     }
 
-    public static void borrowBook(){
-        System.out.println("*********************** Borrow a book ***********************");
-        User user = UserService.getUser("cin");
-        if(user==null) return;
-        Book book = BookDao.getBook("ISBN");
-        if(book==null) return;
-        int book_id = book.getId();
-        int user_id = user.getId();
-        System.out.println("Enter the book's quantity:");
-        int quantity = scanner.nextInt();
-        if(quantity>book.getQuantity()){System.out.println("!!! only "+book.getQuantity()+" books available !!!"); return;}
-        System.out.println("Enter the return date in yyyy-mm-dd format :");
-        String return_date = scanner.next();
-        Date Borrowing_date = new Date();
-        String borrowing_date = dateFormat.format(Borrowing_date);
-
-        try{
-            Statement st = cnn.createStatement();
-            ResultSet resultSet = st.executeQuery("SELECT * from borrowing_list where book_id ="+book_id+" and user_id ="+user_id);
-            if(resultSet.next()){
-                System.out.println("This user has already borrowed "+resultSet.getInt("quantity")+" of this book");
-                System.out.println("Enter Y to allow this operation :");
-                scanner.nextLine();
-                String answer = scanner.next();
-                if(!answer.equals("Y")) {
-                    System.out.println("answer :"+answer);
-                    System.out.println("!!! Operation denied !!!");
-                    return;
-                }
-            }
-
-            String addToBorrowingList = "INSERT INTO borrowing_list (quantity, borrowing_date, return_date, book_id, user_id)" +
-                    "VALUES (?,?,?,?,?)";
-
-            PreparedStatement borrowingListSt = cnn.prepareStatement(addToBorrowingList);
-            borrowingListSt.setInt(1, quantity);
-            borrowingListSt.setString(2, borrowing_date);
-            borrowingListSt.setString(3, return_date);
-            borrowingListSt.setInt(4, book_id);
-            borrowingListSt.setInt(5, user_id);
-
-
-            int row = borrowingListSt.executeUpdate();
-            if (row > 0) {
-                System.out.println("operation successeded");
-                return;
-            }
-
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+    public static ArrayList<BorrowingList>  getBorrowedBooksListByUser() {
+        // input cin
+        String cin = Validation.validateStr("user's cin");
+        return BorrowingListDao.getBorrowedBooks("user.cin='"+cin+"'");
     }
 
-    public static void returnBook(){
-        System.out.println("*********************** Return a book ***********************");
-        User user = UserService.getUser("cin");
-        if(user==null) return;
-        Book book = BookDao.getBook("ISBN");
-        if(book==null) return;
-        int book_id = book.getId();
-        int user_id = user.getId();
-        System.out.println("Enter the book's quantity:");
-        int quantity = scanner.nextInt();
+    public static boolean borrowBook(){
 
-        try {
-            Statement borrowedBookSt = cnn.createStatement();
-            ResultSet resultSet = borrowedBookSt.executeQuery("select * from borrowing_list where book_id = "+book.getId()+" ORDER BY borrowing_date ASC LIMIT 1");
-            if(!resultSet.next()){System.out.println("!!! This book is not in the borrowing list !!!");return;}
-            if(resultSet.getInt("quantity") == quantity){
-                int row = borrowedBookSt.executeUpdate("DELETE from borrowing_list where id ="+resultSet.getInt("id"));
-            }else if(resultSet.getInt("quantity") > quantity){
-                int newQuantity = resultSet.getInt("quantity") - quantity;
-                int row = borrowedBookSt.executeUpdate("UPDATE borrowing_list set quantity = "+ newQuantity +" where id ="+resultSet.getInt("id"));
-            }
-            PreparedStatement bookSt = cnn.prepareStatement("update book set quantity = ? where id = ?");
-            bookSt.setInt(1,book.getQuantity()+quantity);
-            bookSt.setInt(2, book.getId());
-            int row = bookSt.executeUpdate();
-            if(row>0) {System.out.println("operation successeded"); return;}
-        }catch (Exception e){
-            e.printStackTrace();
+        // cin input
+        String cin = Validation.validateStr("the user's cin");
+        // find the user
+        User user = UserDao.getUser("cin='"+cin+"'");
+        if(user==null) {
+            System.out.println("!!! User not found !!!");
+            return false;
         }
+        int user_id = user.getId();
+
+        // ISBN input
+        Long ISBN = Validation.validateISBN();
+        // find the book
+        Book book = BookDao.getBook("ISBN="+ISBN);
+        if(book==null) {
+            System.out.println("!!! Book not found !!!");
+            return false;
+        }
+        // check if the book is available
+        else if(book.getQuantity()==0){
+            System.out.println("!!! Book not available !!!");
+            return false;
+        }
+        int book_id = book.getId();
+
+        // quantity input
+        int quantity;
+        // check if the quantity is more than the book's quantity
+        do{
+            quantity = Validation.validateQuantity();
+            if(quantity>book.getQuantity()){
+                System.out.println("!!! only "+book.getQuantity()+" books available !!!");
+            }
+        }while (quantity>book.getQuantity());
+
+        // borrowing date input
+        LocalDate borrowing_date = Validation.validateBorrowingDate();
+
+        // return date input
+        String return_date = Validation.validateReturnDate(borrowing_date);
+
+        // check if this book is previously borrowed
+        ArrayList<BorrowingList> borrowedBooks = BorrowingListDao.getBorrowedBooks("book_id ="+book_id+" and user_id ="+user_id);
+
+        // if it is then ask for confirmation
+        if(borrowedBooks!=null){
+            int borrowedQuantity = borrowedBooks.stream().mapToInt(x -> x.getQuantity()).sum();
+            System.out.println("!!! This user has already borrowed "+borrowedQuantity+" of this book !!!");
+            System.out.println("Enter Y to allow this operation :");
+            scanner.nextLine();
+            String answer = scanner.next();
+            // if it's not confirmed stop here
+            if(!answer.equals("Y")) {
+                System.out.println("!!! Operation denied !!!");
+                return true;
+            }
+        }
+
+        // else add a borrowed book
+        return BorrowingListDao.addToBorrowedBooks(book_id,user_id,borrowing_date.toString(),return_date,quantity);
+    }
+
+    public static boolean returnBook(){
+
+        // cin input
+        String cin = Validation.validateStr("the user's cin");
+        // find the user
+        User user = UserDao.getUser("cin='"+cin+"'");
+        if(user==null) {
+            System.out.println("!!! User not found !!!");
+            return false;
+        }
+        int user_id = user.getId();
+
+        // ISBN input
+        Long ISBN = Validation.validateISBN();
+        // find the book
+        Book book = BookDao.getBook("ISBN="+ISBN);
+        if(book==null) {
+            System.out.println("!!! Book not found !!!");
+            return false;
+        }
+        int book_id = book.getId();
+
+        // find the borrowed book
+        String condition = "book_id ="+book.getId()+" ORDER BY borrowing_date ASC";
+        BorrowingList borrowedBook = BorrowingListDao.getBorrowedBook(condition);
+        if(borrowedBook==null){
+            System.out.println("!!! This book is not in the borrowing list !!!");
+            return false;
+        }
+
+
+        // Quantity input
+        int quantity = Validation.validateQuantity();
+
+
+        // if the quantities are equal delete the book from the list
+        if(borrowedBook.getQuantity() == quantity){
+            if (BorrowingListDao.deleteBookFromBorrowedBooks(borrowedBook.getId())){
+                return false;
+            }
+        }
+
+        // if the quantity is less update the borrowed book's quantity
+        else if(borrowedBook.getQuantity() > quantity){
+            int newQuantity = borrowedBook.getQuantity() - quantity;
+            if (BorrowingListDao.updateBookQuantityFromBorrowedBooks(borrowedBook.getId(), newQuantity)){
+                return false;
+            }
+        }
+
+        //if the quantity is more
+        else if(borrowedBook.getQuantity() < quantity){
+            int leftQuantity = quantity - borrowedBook.getQuantity();
+            System.out.println("!!! "+leftQuantity+" books are left !!!");
+            System.out.println("!!! Restart the operation to check for borrowed copies from different dates !!!");
+            if(!BorrowingListDao.deleteBookFromBorrowedBooks(borrowedBook.getId())){
+               return false;
+            }
+            quantity = borrowedBook.getQuantity();
+        }
+
+        return BookDao.updateBook(book.getId(),book.getTitle(),book.getAuthorName(),book.getQuantity()+quantity,book.getISBNNumber());
     }
 }

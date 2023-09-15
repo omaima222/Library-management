@@ -18,6 +18,8 @@ public class BorrowingList {
 
     // Getters
 
+    public int getId(){ return this.id; }
+
     public Date getBorrowingDate(){
         return this.borrowingDate;
     }

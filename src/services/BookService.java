@@ -14,6 +14,8 @@ import utils.MyJDBC;
 import repositories.BookDao;
 import utils.Validation;
 
+import javax.sound.midi.Soundbank;
+
 public class BookService {
 
     public static Scanner scanner = new Scanner(System.in);
@@ -36,21 +38,27 @@ public class BookService {
         return books;
     }
     public static boolean addBook(){
-        while (true){
-            // Title input
-            String title = Validation.validateStr("Title");
+        // ISBN input
+        Long ISBN = Validation.validateISBN();
 
-            // Author name input
-            String author_name = Validation.validateStr("Author");
-
-            // Quantity input
-            int quantity = Validation.validateQuantity();
-
-            // ISBN input
-            Long ISBN = Validation.validateISBN();
-
-            return BookDao.addBook(title,author_name,quantity,ISBN);
+        // check if this ISBN is unique 4
+        Book book =  BookDao.getBook("ISBN="+ISBN);
+        if(book!=null){
+            System.out.println("!!! The book '"+book.getTitle()+"' already has this ISBN !!!");
+            return false;
         }
+
+        // Title input
+        String title = Validation.validateStr("Title");
+
+        // Author name input
+        String author_name = Validation.validateStr("Author");
+
+        // Quantity input
+        int quantity = Validation.validateQuantity();
+
+
+        return BookDao.addBook(title,author_name,quantity,ISBN);
     }
     public static boolean deleteBook(){
         // ISBN input
@@ -86,6 +94,7 @@ public class BookService {
             return false;
         }
         System.out.println(book);
+        System.out.println("|_____________________________________________________________________________|");
         // Title input
         String title = Validation.validateStr("Title");
         // Author input

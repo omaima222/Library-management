@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class MissingBooksDao {
     public static Connection cnn = MyJDBC.cnn();
@@ -27,6 +28,8 @@ public class MissingBooksDao {
                 MissingBooksList missingBook = new MissingBooksList(resultSet.getInt("id"));
 
                 missingBook.setQuantity(resultSet.getInt("quantity"));
+
+                missingBook.setMissingDate(resultSet.getString("missing_date"));
 
                 User user = new User(resultSet.getInt("user.id"));
                 user.setFirstName(resultSet.getString("user.first_name"));
@@ -51,14 +54,15 @@ public class MissingBooksDao {
 
     }
 
-    public static boolean addToMissingBooks(int book_id, int user_id, int quantity){
-        String addToMissingBooks = "INSERT INTO missing_books_list (quantity, book_id, user_id)" +
-                "VALUES (?,?,?)";
+    public static boolean addToMissingBooks(int book_id, int user_id, int quantity, String missing_date){
+        String addToMissingBooks = "INSERT INTO missing_books_list (quantity, book_id, user_id,missing_date)" +
+                "VALUES (?,?,?,?)";
         try{
             PreparedStatement st = cnn.prepareStatement(addToMissingBooks);
             st.setInt(1, quantity);
             st.setInt(2, book_id);
             st.setInt(3, user_id);
+            st.setString(4, missing_date);
 
             int row = st.executeUpdate();
             if (row > 0) {

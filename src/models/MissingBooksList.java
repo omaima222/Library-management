@@ -8,6 +8,8 @@ public class MissingBooksList {
     private Book book;
 
     private User user;
+
+    private String missing_date;
     public MissingBooksList(int id){
         this.id = id;
     }
@@ -26,6 +28,10 @@ public class MissingBooksList {
         return  this.user;
     }
 
+    public String getMissingDate(){
+        return  this.missing_date;
+    }
+
 
     // Setters
 
@@ -39,5 +45,9 @@ public class MissingBooksList {
 
     public void setUser(User user){
         this.user = user;
+    }
+
+    public void setMissingDate(String missing_date){
+        this.missing_date = missing_date;
     }
 }

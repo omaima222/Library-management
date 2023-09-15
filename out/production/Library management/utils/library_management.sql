@@ -43,6 +43,7 @@ CREATE TABLE `missing_books_list` (
     `book_id` bigint(20) NOT NULL,
     `user_id` bigint(20) NOT NULL,
     `quantity` bigint(20) NOT NULL,
+    `missing_date` date NOT NULL,
     PRIMARY KEY (`id`),
     KEY `book_id` (`book_id`),
     FOREIGN KEY (`book_id`) REFERENCES `book` (`id`),

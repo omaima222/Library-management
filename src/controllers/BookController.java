@@ -6,51 +6,23 @@ import repositories.MissingBooksDao;
 import repositories.UserDao;
 import services.BookService;
 import models.Book;
+import utils.Console;
 
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class BookController {
 
-    public static Scanner scanner = new Scanner(System.in);
-
     public static void getAvailableBooks(){
-        System.out.println("|_____________________________ AVAILABLE BOOKS _____________________________|");
-        ArrayList<Book> books = BookService.getAllAvailableBooks();
-        if(books == null || books.isEmpty()){
-            System.out.println("|_____________________________ NO BOOKS FOUND ______________________________|");
-            return;
-        }
-        for (Book book : books) {
-            System.out.println(book);
-            System.out.println("|___________________________________________________________________________|");
-        }
+        Console.printBook(BookService.getAllAvailableBooks(), "AVAILABLE BOOKS");
     }
 
     public static void searchByTitle(){
-        System.out.println("|_____________________________ SEARCH BY TITLE _____________________________|");
-        ArrayList<Book> books = BookService.searchByTitle();
-        if(books == null || books.isEmpty()){
-            System.out.println("|_____________________________ NO BOOKS FOUND ______________________________|");
-            return;
-        }
-        for(Book book : books){
-            System.out.println(book);
-            System.out.println("|___________________________________________________________________________|");
-        }
+        Console.printBook(BookService.searchByTitle(), "SEARCH BY TITLE");
     }
 
     public static void searchByAuthor(){
-        System.out.println("|_____________________________ SEARCH BY Author _____________________________|");
-        ArrayList<Book> books = BookService.searchByAuthor();
-        if(books == null || books.isEmpty()){
-            System.out.println("|_____________________________ NO BOOKS FOUND ______________________________|");
-            return;
-        }
-        for(Book book : books){
-            System.out.println(book);
-            System.out.println("|___________________________________________________________________________|");
-        }
+        Console.printBook(BookService.searchByAuthor(), "SEARCH BY AUTHOR");
     }
 
     public static void addBook(){
@@ -83,13 +55,13 @@ public class BookController {
         System.out.println("|________________________________ STATICS ________________________________");
         System.out.println("| TOTAL BOOKS      :                                                 "+total);
         System.out.println("|_________________________________________________________________________");
-        System.out.println("| AVAILABLE BOOKS  :                                        "+availableBooks);
+        System.out.println("| AVAILABLE BOOKS  :                                                 "+availableBooks);
         System.out.println("|_________________________________________________________________________");
-        System.out.println("| BORROWED BOOKS   :                                         "+borrowedBooks);
+        System.out.println("| BORROWED BOOKS   :                                                 "+borrowedBooks);
         System.out.println("|_________________________________________________________________________");
-        System.out.println("| MISSING BOOKS    :                                         "+missingBooks);
+        System.out.println("| MISSING BOOKS    :                                                 "+missingBooks);
         System.out.println("|_________________________________________________________________________");
-        System.out.println("| USERS            :                                                "+users);
+        System.out.println("| USERS            :                                                 "+users);
         System.out.println("|_________________________________________________________________________");
     }
 

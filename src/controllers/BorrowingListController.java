@@ -1,23 +1,34 @@
 package controllers;
 
 import models.BorrowingList;
+import services.BookService;
 import services.BorrowingListService;
+import utils.Console;
 
 import java.util.ArrayList;
 
 public class BorrowingListController {
 
     public static void getBorrowedBooks(){
-        System.out.println("________________________________________________________________________________________________________________________________");
-        System.out.println("CIN                User                Book title                Book ISBN                Borrowing date                Return date                ");
-        System.out.println("________________________________________________________________________________________________________________________________");
-        ArrayList<BorrowingList> books = BorrowingListService.getBorrowedBooksList();
-        if(books == null || books.isEmpty()){
-            System.out.println("_________________________________ THIS LIST IS EMPTY _________________________________");
-            return;
-        }
-        for(BorrowingList book : books){
-            System.out.println(book);
-        }
+        Console.printBorrowingList(BorrowingListService.getBorrowedBooksList(),"BORROWED BOOKS");
     }
+
+    public static void getBorrowedBooksByUser(){
+        Console.printBorrowingList(BorrowingListService.getBorrowedBooksListByUser(),"BORROWED BOOKS BY USER");
+    }
+
+    public static void borrowBook(){
+        System.out.println("|________________________________ BORROW A BOOK ________________________________|");
+        if(BorrowingListService.borrowBook()){
+               System.out.println("|__________________________ SUCCESSFULLY BORROWED BOOK _________________________|");
+        }else  System.out.println("|_________________________ !!!! OPERATION FAILED !!!! __________________________|");
+    }
+
+    public static void returnBook(){
+        System.out.println("|________________________________ RETURN A BOOK ________________________________|");
+        if(BorrowingListService.returnBook()){
+               System.out.println("|__________________________ SUCCESSFULLY RETURNED BOOK _________________________|");
+        }else  System.out.println("|_________________________ !!!! OPERATION FAILED !!!! __________________________|");
+    }
+
 }
